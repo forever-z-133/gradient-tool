@@ -6,6 +6,8 @@ import App from './App'
 
 Vue.config.productionTip = false
 
+document.title = 'CSS 渐变制作工具'
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',
