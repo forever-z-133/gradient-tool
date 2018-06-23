@@ -4,94 +4,81 @@
 // 且，都将以对象为中间形态来进行相互转换
 
 /*
- * Color 类，将 color 字符串转为对象
- * 且，能进行颜色加减及转换
+ * 判断颜色类型
  */
-function Color(color) {
-  // this.str = color;
-  // this.a = this.alpha = 1;
-  // this.r = this.red = 0;
-  // this.g = this.green = 0;
-  // this.b = this.blue = 0;
-  // this.h = this.hue = 0;
-  // this.s = this.saturation = 0;
-  // this.l = this.lightness = 0;
+var colorReg = {
+  'hex' : /^#([a-f0-9]{3}$|[a-f0-9]{6}$)/i,
+  'rgb' : /^rgb\((\s*\d+\s*,\s*){2}\d+\s*\)$/i,
+  'rgba': /^rgba\((\s*\d+\s*,\s*){3}\d+\s*\)$/i,
+  'hsl' : /^hsl\((\s*\d+\s*,\s*){2}\d+\s*\)$/i,
+  'hsla': /^hsla\((\s*\d+\s*,\s*){3}\d+\s*\)$/i,
+}
+function getColorType(color) {
+  for (var i in colorReg) {
+    var reg = colorReg[i];
+    if (reg.test(color)) return i;
+  }
+  return new Error('请使用 hex/rgb/rgba/hsl/hsla 类型的颜色');
+};
 
-  if (/^#[a-f0-9]{3}$/i.test(color)) {
-    this.type = 'hex';
-    var arr = color.split('');
-    this.r = colorNumber(arr[1]);
-    this.g = colorNumber(arr[2]);
-    this.b = colorNumber(arr[3]);
-    this.a = 1;
-  } else if (/^#[a-f0-9]{6}$/i.test(color)) {
-    this.type = 'hex';
-    var arr = color.split('');
-    this.r = colorNumber(arr[1] + arr[2]);
-    this.g = colorNumber(arr[3] + arr[4]);
-    this.b = colorNumber(arr[5] + arr[6]);
-    this.a = 1;
-  } else if (/^rgb\((\s*\d+\s*,\s*){2}\d+\s*\)$/i.test(color)) {
-    this.type = 'rgb';
-    var arr = color.split(/[\(,]/);
-    this.r = colorNumber(arr[1]);
-    this.g = colorNumber(arr[2]);
-    this.b = colorNumber(arr[3]);
-    this.a = 1;
-  } else if (/^rgba\((\s*\d+\s*,\s*){3}\d+\s*\)$/i.test(color)) {
-    this.type = 'rgba';
-    var arr = color.split(/[\(,]/);
-    this.r = colorNumber(arr[1]);
-    this.g = colorNumber(arr[2]);
-    this.b = colorNumber(arr[3]);
-    this.a = colorNumber(arr[4]);
-  } else if (/^hsl\((\s*\d+\s*,\s*){2}\d+\s*\)$/i.test(color)) {
-    this.type = 'rgba';
-    var arr = color.split(/[\(,]/);
-    // this.h = colorNumber(arr[1]);
-    // this.s = colorNumber(arr[2]);
-    // this.l = colorNumber(arr[3]);
-    this.a = 1;
-  } else if (/^hsla\((\s*\d+\s*,\s*){3}\d+\s*\)$/i.test(color)) {
-    this.type = 'rgba';
-    var arr = color.split(/[\(,]/);
-    // this.h = colorNumber(arr[1]);
-    // this.s = colorNumber(arr[2]);
-    // this.l = colorNumber(arr[3]);
-    this.a = colorNumber(arr[4]);
-  } else {
-    return new Error('Color 参数不太正确哟');
+
+/*
+ * 将颜色字符串转为对象
+ */
+function toColorObj(color) {
+  var type = getColorType(color);
+
+  // 将 #fff 转为 #ffffff
+  if (type === 'hex' && color.length < 7) {
+    color = color.split('').map(function(x, i) {
+      return i > 0 ? x + x : x;
+    }).join('');
+  }
+
+  // 根据类型拆分为 rgb 或 hsl 的数组
+  var arr = [];
+  switch (type) {
+    case 'hex': {
+      var a = color.split('');
+      arr = [a[1]+a[2], a[3]+a[4], a[5]+a[6], 0];
+      break;
+    }
+    case 'hsl':
+    case 'hsla':
+    case 'rgb':
+    case 'rgba':
+    default: {
+      var a = color.split(/[\(,]/);
+      arr = [a[1], a[2], a[3], a[4] || 0];
+      break;
+    }
+  }
+
+  // 数组进行十进制转化（其中包含去除括号和空格等操作）
+  arr = arr.map(_to10);
+
+  // 最后转为对象，比如 { r:1, g:2, b:3, a:0 }
+  if (['hsl', 'hsla'].indeOf(type) > -1) {
+    return _hsl_to_obj.apply(null, arr);
+  }
+  if (['hex', 'rgb', 'rgba'].indeOf(type) > -1) {
+    return _rbg_to_obj.apply(null, arr);
   }
 }
+function _rbg_to_obj(r, b, g, a) {
 
-/*
- * 将十六进制转字符串为数字
- */
-function colorNumber(str) {
-  if (typeof str === 'number') return str || 0;
-  str = str.replace(/[^a-f0-9]*/gi, '');
-  return /[a-f]/.test(str) ? parseInt(str, 16) : Number(str);
 }
-
-/*
- * 将当前 color 转成 type 类型
- * 比如 #000 转为 rgb 的 rgba(0,0,0,0)
- */
-function convertColor(color, type) {
+function _hsl_to_obj(h, s, l, a) {
 
 }
 
-/*
- * 获取该 color 类型
- * 比如 #000 为 hex 类型，rgba(0,0,0,0) 为 rgba 类型
- */
-function getColorType(color) {
-
+// 转为十进制或十六进制
+function _to10(num) {
+  if (typeof num === 'number') return num || 0;
+  num = num.replace(/[^a-f0-9]*/gi, '');
+  return /[a-f]/.test(num) ? parseInt(num, 16) : Number(num);
 }
-
-/*
- * 以下，为一堆颜色的转换方法
- */
-function hex2rgb(hex) {
-
+function _to16(num) {
+  num = num.toString(16);
+  return num.length < 2 ? '0' + num : num;
 }
