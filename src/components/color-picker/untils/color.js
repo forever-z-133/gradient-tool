@@ -29,7 +29,7 @@ function toColorObj(color) {
   var type = getColorType(color);
 
   // 将 #fff 转为 #ffffff
-  if (type === 'hex' && color.length < 7) {
+  if (type === 'hex' && color.length < 6) {
     color = color.split('').map(function(x, i) {
       return i > 0 ? x + x : x;
     }).join('');
@@ -40,7 +40,7 @@ function toColorObj(color) {
   switch (type) {
     case 'hex': {
       var a = color.split('');
-      arr = [a[1]+a[2], a[3]+a[4], a[5]+a[6], 0];
+      arr = [a[1]+a[2], a[3]+a[4], a[5]+a[6], 1];
       break;
     }
     case 'hsl':
@@ -49,7 +49,7 @@ function toColorObj(color) {
     case 'rgba':
     default: {
       var a = color.split(/[\(,]/);
-      arr = [a[1], a[2], a[3], a[4] || 0];
+      arr = [a[1], a[2], a[3], a[4]];
       break;
     }
   }
@@ -58,10 +58,10 @@ function toColorObj(color) {
   arr = arr.map(_to10);
 
   // 最后转为对象，比如 { r:1, g:2, b:3, a:0 }
-  if (['hsl', 'hsla'].indeOf(type) > -1) {
+  if (['hsl', 'hsla'].indexOf(type) > -1) {
     return _hsl_to_obj.apply(null, arr);
   }
-  if (['hex', 'rgb', 'rgba'].indeOf(type) > -1) {
+  if (['hex', 'rgb', 'rgba'].indexOf(type) > -1) {
     return _rbg_to_obj.apply(null, arr);
   }
 }
